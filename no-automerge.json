@@ -1,0 +1,31 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+
+  // ---------------------------------------------------------------------------
+  // The shared preset with automerge switched off, for a repo whose default
+  // branch has no required status check. Adopt it with:
+  //
+  //   { "extends": ["github>noahkiss/renovate-config:no-automerge"] }
+  //
+  // Everything else — schedule, minimumReleaseAge, labels, vulnerability alert
+  // handling — is inherited unchanged from default.json.
+  //
+  // Move a repo off this preset onto the plain one only after it has BOTH a
+  // workflow that runs on `pull_request` and branch protection making that
+  // workflow's check required.
+  // ---------------------------------------------------------------------------
+
+  "description": "Shared preset with automerge disabled, for repos with no required PR check.",
+  "extends": ["github>noahkiss/renovate-config"],
+
+  "packageRules": [
+    {
+      // Last rule wins in Renovate, and this file's rules are appended after
+      // the ones default.json contributes, so this switches off the inherited
+      // devDependency automerge for every package.
+      "description": "No automerge anywhere in this repo.",
+      "matchPackageNames": ["*"],
+      "automerge": false
+    }
+  ]
+}

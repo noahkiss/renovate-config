@@ -1,0 +1,81 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+
+  // ---------------------------------------------------------------------------
+  // Shared Renovate preset. Adopt it with a one-line renovate.json:
+  //
+  //   { "extends": ["github>noahkiss/renovate-config"] }
+  //
+  // JSONC, not JSON: Renovate parses JSON, JSONC and JSON5 preset files, so the
+  // comments below survive. The file MUST be named default.json — a bare
+  // `github>owner/repo` reference resolves that exact name, and a default.json5
+  // would be unreachable without spelling the filename at every call site.
+  //
+  // AUTOMERGE IS NOT SAFE BY ITSELF. The one rule at the bottom automerges
+  // devDependency patch and minor updates. That is only sound in a repo whose
+  // default branch has branch protection with a REQUIRED status check. Without
+  // one, Renovate merges on schedule whether CI passed or not, and the test
+  // gate becomes decoration.
+  //
+  // A repo with no PR gate must extend the no-automerge variant instead:
+  //
+  //   { "extends": ["github>noahkiss/renovate-config:no-automerge"] }
+  // ---------------------------------------------------------------------------
+
+  // config:recommended is the base every repo here already assumed. It brings
+  // the dependency dashboard and the default grouping and range behaviour.
+  // Semantic-commit handling is deliberately NOT set: Renovate detects it from
+  // each repo's own history, and forcing one answer fleet-wide would override
+  // repos that do use conventional commits.
+  "extends": ["config:recommended"],
+
+  "timezone": "America/New_York",
+
+  // One review window for every repo, so PRs never arrive mid-workday.
+  "schedule": ["* 0-6 * * *"],
+
+  // The cheapest supply-chain control available: a release must have been
+  // public for three days before Renovate will offer it. Applies to every
+  // ecosystem.
+  "minimumReleaseAge": "3 days",
+
+  "labels": ["renovate"],
+  "dependencyDashboard": true,
+
+  // NO prConcurrentLimit AND NO prHourlyLimit, on purpose, and adopting repos
+  // must not add them. A throttle does not reduce risk; it hides pending
+  // updates behind a dashboard checkbox. The nightly `schedule` above is the
+  // only pacing this fleet wants, and nothing ships until a PR is merged, so a
+  // long open-PR list costs list length and nothing else.
+
+  // A CVE fix should not wait for the overnight window.
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "schedule": [],
+    "labels": ["renovate", "security"]
+  },
+  "osvVulnerabilityAlerts": true,
+
+  "packageRules": [
+    {
+      // devDependencies only, and only patch and minor. A devDependency never
+      // reaches the shipped artifact, so the PR's own test run is the entire
+      // risk surface. Production dependencies, majors, base images and GitHub
+      // Actions are all merged by hand.
+      //
+      // platformAutomerge hands the merge to GitHub's own auto-merge, which
+      // waits for the required check. That is what makes this rule depend on
+      // branch protection rather than on Renovate's schedule.
+      //
+      // Scope note: `devDependencies` is the npm depType. Python (pep621) dev
+      // groups carry different depType names and are NOT covered here — they
+      // stay manual, which is the safe direction.
+      "description": "Automerge devDependency patch and minor updates, gated on the repo's required status check.",
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true
+    }
+  ]
+}
