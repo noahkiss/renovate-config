@@ -7,17 +7,17 @@ extends it.
 
 | Preset | Use it when | Automerge |
 |---|---|---|
-| `github>noahkiss/renovate-config` | The default branch has branch protection with a required status check | devDependency patch + minor |
-| `github>noahkiss/renovate-config:no-automerge` | It does not | none |
+| `github>noahkiss/renovate-config` | A workflow runs on `pull_request` | devDependency patch + minor |
+| `github>noahkiss/renovate-config:no-automerge` | No CI runs on pull requests | none |
 
-Pick by the gate, not by preference. `automerge` with no required check merges
-on schedule whether CI passed or not.
+Branch protection is not required. The gate is Renovate's own, not GitHub's;
+see "How the automerge gate works" below.
 
 ## Adopt it
 
 Add `renovate.json` at the repo root.
 
-Repo with a required PR check:
+Repo with CI on pull requests:
 
 ```json
 {
@@ -57,6 +57,39 @@ merged by hand.
 
 `devDependencies` is the npm depType. Python (pep621) dev groups use different
 depType names and stay manual.
+
+## How the automerge gate works
+
+The automerge rule sets `platformAutomerge: false`. Renovate does the merge
+itself on a later run, and only when the PR branch is green:
+
+- Every commit status has passed and every check run concluded `success`,
+  `neutral` or `skipped`.
+- A pending or in-progress check is not green. Renovate waits for the next run.
+- A failed check is red. Renovate leaves the PR open and adds reviewers.
+- No checks at all is not green. Renovate does not automerge a branch with no
+  status checks unless `ignoreTests` is `true`, and this preset never sets it.
+- Renovate's own `renovate/stability-days` status does not count toward green
+  by default, so a repo whose only check is Renovate's never merges.
+
+`minimumReleaseAge` adds that `renovate/stability-days` status as pending until
+the release is three days old, so the PR cannot merge before then either.
+
+The alternative, `platformAutomerge: true`, hands the merge to GitHub's
+auto-merge, which waits only for **required** checks. Branch protection and
+rulesets are not available on private repos on GitHub's free plan, so nothing
+there can be required and GitHub would merge before CI finished. Renovate's
+docs say the same: without a required check the platform "might merge Renovate
+PRs even if the repository's tests haven't started, are still in progress, or
+possibly even when they have failed". The Renovate-side gate has no such
+dependency.
+
+A repo with no CI on pull requests never goes green, so the rule would not
+merge there either. It still extends `:no-automerge` so the intent is explicit
+and its PRs do not advertise "Automerge: Enabled".
+
+Expect a delay. The Mend hosted app runs a repo's job every few hours plus on
+webhook events, and Renovate merges at most one PR per base branch per run.
 
 ## What it deliberately does not set
 

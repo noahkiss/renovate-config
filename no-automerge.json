@@ -2,20 +2,22 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
 
   // ---------------------------------------------------------------------------
-  // The shared preset with automerge switched off, for a repo whose default
-  // branch has no required status check. Adopt it with:
+  // The shared preset with automerge switched off, for a repo that runs no CI
+  // on pull requests. Adopt it with:
   //
   //   { "extends": ["github>noahkiss/renovate-config:no-automerge"] }
   //
   // Everything else — schedule, minimumReleaseAge, labels, vulnerability alert
   // handling — is inherited unchanged from default.json.
   //
-  // Move a repo off this preset onto the plain one only after it has BOTH a
-  // workflow that runs on `pull_request` and branch protection making that
-  // workflow's check required.
+  // The plain preset's gate is Renovate-side (platformAutomerge off), so it
+  // would never open in a repo with no PR checks anyway. This variant exists so
+  // that repo says so explicitly instead of relying on the gate staying shut.
+  // Move a repo off it onto the plain one once it has a workflow that runs on
+  // `pull_request`. Branch protection is not required.
   // ---------------------------------------------------------------------------
 
-  "description": "Shared preset with automerge disabled, for repos with no required PR check.",
+  "description": "Shared preset with automerge disabled, for repos with no CI on pull requests.",
   "extends": ["github>noahkiss/renovate-config"],
 
   "packageRules": [

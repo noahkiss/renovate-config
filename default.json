@@ -11,13 +11,19 @@
   // `github>owner/repo` reference resolves that exact name, and a default.json5
   // would be unreachable without spelling the filename at every call site.
   //
-  // AUTOMERGE IS NOT SAFE BY ITSELF. The one rule at the bottom automerges
-  // devDependency patch and minor updates. That is only sound in a repo whose
-  // default branch has branch protection with a REQUIRED status check. Without
-  // one, Renovate merges on schedule whether CI passed or not, and the test
-  // gate becomes decoration.
+  // AUTOMERGE IS GATED BY RENOVATE, NOT BY GITHUB. The one rule at the bottom
+  // automerges devDependency patch and minor updates with platformAutomerge
+  // off, so Renovate itself checks the PR's status checks and check runs on a
+  // later run and merges only when every one has passed. A pending, running or
+  // failed check blocks the merge, and so does a branch with no checks at all:
+  // Renovate treats "no checks" as not green unless ignoreTests is true, which
+  // this preset never sets. That gate needs no branch protection, so it holds
+  // on private repos on GitHub's free plan, where branch protection is not
+  // available.
   //
-  // A repo with no PR gate must extend the no-automerge variant instead:
+  // A repo with no CI on pull requests gets no automerge from this rule (the
+  // gate never opens), but it must still extend the no-automerge variant so the
+  // intent is explicit and the PR body does not advertise "Automerge: Enabled":
   //
   //   { "extends": ["github>noahkiss/renovate-config:no-automerge"] }
   // ---------------------------------------------------------------------------
@@ -63,19 +69,28 @@
       // risk surface. Production dependencies, majors, base images and GitHub
       // Actions are all merged by hand.
       //
-      // platformAutomerge hands the merge to GitHub's own auto-merge, which
-      // waits for the required check. That is what makes this rule depend on
-      // branch protection rather than on Renovate's schedule.
+      // platformAutomerge is OFF on purpose. With it on, GitHub's auto-merge
+      // does the merge and waits only for REQUIRED checks, and a private repo
+      // on the free plan cannot make any check required, so it would merge
+      // before CI finished. With it off, Renovate merges the PR itself on a
+      // subsequent run, and only when the branch is green: every status
+      // success and every check run concluded success, neutral or skipped.
+      // Pending or in-progress is not green. No checks at all is not green.
+      // Renovate's own renovate/stability-days status does not count toward
+      // green, so a repo whose only check is Renovate's never merges.
+      //
+      // ignoreTests stays at its default (false). Never set it true here: it
+      // makes Renovate merge with no checks at all.
       //
       // Scope note: `devDependencies` is the npm depType. Python (pep621) dev
       // groups carry different depType names and are NOT covered here — they
       // stay manual, which is the safe direction.
-      "description": "Automerge devDependency patch and minor updates, gated on the repo's required status check.",
+      "description": "Automerge devDependency patch and minor updates once Renovate sees every PR check pass.",
       "matchDepTypes": ["devDependencies"],
       "matchUpdateTypes": ["minor", "patch"],
       "automerge": true,
       "automergeType": "pr",
-      "platformAutomerge": true
+      "platformAutomerge": false
     }
   ]
 }
