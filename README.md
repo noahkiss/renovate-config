@@ -47,6 +47,7 @@ Then add the repo in the Renovate app's install settings.
 | `minimumReleaseAge` | `3 days` | A release must be public three days before it is offered |
 | `labels` | `renovate` | |
 | `dependencyDashboard` | `true` | |
+| `prHourlyLimit`, `prConcurrentLimit` | `0` | No throttle. Renovate's own defaults are 2 an hour and 10 open, so omitting the keys is not enough. Adopting repos should not set them: a throttle hides pending updates; the `schedule` is the only pacing |
 | `vulnerabilityAlerts.schedule` | `[]` | A CVE fix skips the overnight window |
 | `osvVulnerabilityAlerts` | `true` | |
 
@@ -93,10 +94,6 @@ webhook events, and Renovate merges at most one PR per base branch per run.
 
 ## What it deliberately does not set
 
-- **No `prConcurrentLimit`, no `prHourlyLimit`** — and adopting repos should not
-  add them. A throttle does not reduce risk; it hides pending updates behind a
-  dashboard checkbox. The nightly `schedule` is the only pacing wanted, and
-  nothing ships until a PR is merged.
 - **No semantic-commit setting** — Renovate detects that per repo from its own
   history. Forcing one answer here would override repos that use conventional
   commits.

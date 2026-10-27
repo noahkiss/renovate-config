@@ -48,11 +48,14 @@
   "labels": ["renovate"],
   "dependencyDashboard": true,
 
-  // NO prConcurrentLimit AND NO prHourlyLimit, on purpose, and adopting repos
-  // must not add them. A throttle does not reduce risk; it hides pending
-  // updates behind a dashboard checkbox. The nightly `schedule` above is the
-  // only pacing this fleet wants, and nothing ships until a PR is merged, so a
-  // long open-PR list costs list length and nothing else.
+  // No PR throttle, on purpose. Renovate's own defaults are 2 PRs an hour and
+  // 10 open, so leaving these keys out still throttles; 0 means no limit.
+  // Adopting repos should not set them. A throttle does not reduce risk; it
+  // hides pending updates behind a dashboard checkbox. The nightly `schedule`
+  // above is the only pacing this fleet wants, and nothing ships until a PR is
+  // merged, so a long open-PR list costs list length and nothing else.
+  "prHourlyLimit": 0,
+  "prConcurrentLimit": 0,
 
   // A CVE fix should not wait for the overnight window.
   "vulnerabilityAlerts": {
