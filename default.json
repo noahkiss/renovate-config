@@ -33,12 +33,24 @@
   // Semantic-commit handling is deliberately NOT set: Renovate detects it from
   // each repo's own history, and forcing one answer fleet-wide would override
   // repos that do use conventional commits.
-  "extends": ["config:recommended"],
+  //
+  // group-non-major (same repo) folds non-major updates into two PRs a night;
+  // that file says why and how a repo opts out.
+  "extends": [
+    "config:recommended",
+    "github>noahkiss/renovate-config:group-non-major"
+  ],
 
   "timezone": "America/New_York",
 
   // One review window for every repo, so PRs never arrive mid-workday.
   "schedule": ["* 0-6 * * *"],
+
+  // Rebase a Renovate branch only when it conflicts with its base, not every
+  // time the base branch moves. Each rebase is a push, and each push runs the
+  // PR's CI again: on a busy main the default ("auto") re-ran CI on every open
+  // PR after every merge.
+  "rebaseWhen": "conflicted",
 
   // The cheapest supply-chain control available: a release must have been
   // public for three days before Renovate will offer it. Applies to every
@@ -54,12 +66,18 @@
   // hides pending updates behind a dashboard checkbox. The nightly `schedule`
   // above is the only pacing this fleet wants, and nothing ships until a PR is
   // merged, so a long open-PR list costs list length and nothing else.
+  // Grouping (group-non-major.json) cuts the number of PRs and CI runs; it is
+  // not pacing, and it holds nothing back.
   "prHourlyLimit": 0,
   "prConcurrentLimit": 0,
 
-  // A CVE fix should not wait for the overnight window.
+  // A CVE fix should not wait for the overnight window, and should not wait in
+  // a group either: groupName null keeps each fix its own PR, off-schedule.
+  // (null is Renovate's own default here; it is spelled out so the grouping
+  // in group-non-major.json can never absorb a security fix.)
   "vulnerabilityAlerts": {
     "enabled": true,
+    "groupName": null,
     "schedule": [],
     "labels": ["renovate", "security"]
   },
@@ -88,6 +106,8 @@
       // Scope note: `devDependencies` is the npm depType. Python (pep621) dev
       // groups carry different depType names and are NOT covered here — they
       // stay manual, which is the safe direction.
+      // These are exactly the updates group-non-major.json puts in the
+      // "non-major devDependencies" group, so that whole group automerges.
       "description": "Automerge devDependency patch and minor updates once Renovate sees every PR check pass.",
       "matchDepTypes": ["devDependencies"],
       "matchUpdateTypes": ["minor", "patch"],
