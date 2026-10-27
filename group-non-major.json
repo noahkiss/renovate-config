@@ -1,0 +1,50 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+
+  // ---------------------------------------------------------------------------
+  // Two grouped PRs per repo per night instead of one PR per dependency.
+  // default.json extends this file, so every adopter gets it. A repo whose
+  // tooling needs one PR per dependency opts out with:
+  //
+  //   "ignorePresets": ["github>noahkiss/renovate-config:group-non-major"]
+  //
+  // (noahkiss/infra does: its nightly triage merges one compose path per PR.)
+  //
+  // WHY GROUP: every Renovate PR runs the repo's CI, once per push to its
+  // branch, and private repos pay for those minutes. Ungrouped, one night's
+  // updates opened ~4 CI runs per dependency. Grouped, a repo opens at most two
+  // non-major PRs a night, whatever the number of updates.
+  //
+  //   group                       matches                          automerge
+  //   --------------------------  -------------------------------  ---------
+  //   non-major dependencies      minor, patch, digest; any dep    no
+  //   non-major devDependencies   minor, patch; devDependencies    yes (*)
+  //
+  //   (*) by default.json's automerge rule, which matches exactly this group's
+  //       updates, so the whole group automerges once its checks pass.
+  //
+  // Majors are not grouped: each stays its own PR. Last rule wins in Renovate,
+  // so the devDependencies rule below takes those updates out of the first
+  // group. Vulnerability fixes are never grouped: default.json sets
+  // vulnerabilityAlerts.groupName to null, and Renovate applies that after
+  // every packageRule.
+  // ---------------------------------------------------------------------------
+
+  "description": "Group non-major updates into two PRs: devDependencies and everything else.",
+
+  "packageRules": [
+    {
+      "description": "One PR for every non-major update that is not an npm devDependency.",
+      "matchUpdateTypes": ["minor", "patch", "digest"],
+      "groupName": "non-major dependencies",
+      "groupSlug": "non-major"
+    },
+    {
+      "description": "One PR for npm devDependency patch and minor updates (automerged by default.json).",
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "non-major devDependencies",
+      "groupSlug": "non-major-dev"
+    }
+  ]
+}
