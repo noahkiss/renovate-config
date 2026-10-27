@@ -41,15 +41,45 @@ Then add the repo in the Renovate app's install settings.
 
 | Key | Value | Why |
 |---|---|---|
-| `extends` | `config:recommended` | Dependency dashboard, default grouping and range behaviour |
+| `extends` | `config:recommended`, `:group-non-major` | Dependency dashboard and range behaviour; non-major grouping (below) |
 | `timezone` | `America/New_York` | |
 | `schedule` | `* 0-6 * * *` | One overnight review window, so PRs never arrive mid-workday |
 | `minimumReleaseAge` | `3 days` | A release must be public three days before it is offered |
 | `labels` | `renovate` | |
 | `dependencyDashboard` | `true` | |
 | `prHourlyLimit`, `prConcurrentLimit` | `0` | No throttle. Renovate's own defaults are 2 an hour and 10 open, so omitting the keys is not enough. Adopting repos should not set them: a throttle hides pending updates; the `schedule` is the only pacing |
+| `rebaseWhen` | `conflicted` | A branch is rebased only when it conflicts. Each rebase is a push, and each push runs the PR's CI again |
 | `vulnerabilityAlerts.schedule` | `[]` | A CVE fix skips the overnight window |
+| `vulnerabilityAlerts.groupName` | `null` | A CVE fix is its own PR, never part of a group |
 | `osvVulnerabilityAlerts` | `true` | |
+
+## Grouping
+
+`group-non-major.json` folds non-major updates into at most two PRs per repo per
+night. Every PR runs the repo's CI, once per push to its branch, and private
+repos pay for those minutes.
+
+| Group (branch) | Takes | Automerge |
+|---|---|---|
+| `non-major dependencies` (`renovate/non-major`) | Every minor, patch and digest update the other group does not take | No |
+| `non-major devDependencies` (`renovate/non-major-dev`) | npm devDependency minor and patch updates | Yes, by the rule below, which matches exactly this group |
+
+Majors are not grouped: each stays its own PR. A vulnerability fix is never
+grouped. A repo's own `groupName` rules come after the preset's, so they still
+win for the packages they match.
+
+A repo whose tooling needs one PR per dependency opts out:
+
+```json
+{
+  "extends": ["github>noahkiss/renovate-config"],
+  "ignorePresets": ["github>noahkiss/renovate-config:group-non-major"]
+}
+```
+
+`noahkiss/infra` does: its triage job merges and deploys one compose path per PR.
+
+## Automerge
 
 Automerge covers **devDependencies, patch and minor, only**. A devDependency
 never reaches the shipped artifact, so the PR's own test run is the whole risk
@@ -107,12 +137,12 @@ their `extends` list rather than replacing it.
 ## File naming
 
 A bare `github>owner/repo` reference resolves `default.json`, and a named preset
-resolves `<name>.json`. Both files here are JSONC — Renovate parses comments in
+resolves `<name>.json`. Every file here is JSONC — Renovate parses comments in
 preset files. Do not rename `default.json` to `default.json5`: it would become
 unreachable from the one-line `extends` above.
 
 ## Validate a change
 
 ```sh
-npx --yes renovate-config-validator default.json no-automerge.json
+npx --yes --package renovate -- renovate-config-validator default.json no-automerge.json group-non-major.json
 ```
