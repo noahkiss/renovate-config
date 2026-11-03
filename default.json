@@ -56,6 +56,12 @@
   // public for three days before Renovate will offer it. Applies to every
   // ecosystem.
   "minimumReleaseAge": "3 days",
+  // Renovate reads a release date from Docker Hub only. Since Renovate 42 an
+  // update with no date never passes minimumReleaseAge, so images on any other
+  // registry (ghcr.io, lscr.io, quay.io) waited for ever. Optional: those pass
+  // the check at once, and a consumer that needs a soak for them measures it
+  // itself, for example from the age of the update commit.
+  "minimumReleaseAgeBehaviour": "timestamp-optional",
 
   "labels": ["renovate"],
   "dependencyDashboard": true,

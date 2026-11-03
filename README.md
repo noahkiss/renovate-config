@@ -45,6 +45,7 @@ Then add the repo in the Renovate app's install settings.
 | `timezone` | `America/New_York` | |
 | `schedule` | `* 0-6 * * *` | One overnight review window, so PRs never arrive mid-workday |
 | `minimumReleaseAge` | `3 days` | A release must be public three days before it is offered |
+| `minimumReleaseAgeBehaviour` | `timestamp-optional` | An update with no release date (any Docker registry but Docker Hub) is not held for ever; the consumer soaks it |
 | `labels` | `renovate` | |
 | `dependencyDashboard` | `true` | |
 | `prHourlyLimit`, `prConcurrentLimit` | `0` | No throttle. Renovate's own defaults are 2 an hour and 10 open, so omitting the keys is not enough. Adopting repos should not set them: a throttle hides pending updates; the `schedule` is the only pacing |
